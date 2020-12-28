@@ -10,8 +10,12 @@ Kitti Depth dataset should be prepared following [NLSPN](https://github.com/zzan
 * **modify docker mount location** && start docker container by `bash start.sh`.
 * (if necessary) modify the split of data in the cpp code.
 * compile depth2normal (recommend the paralleled version) by `bash compile_parallel.sh`
-* **modify input/output path** && run it by `bash run.sh`
+* **modify input/output path, OMP_NUM_THREADS** && run it by `bash run.sh`
 
 ### Results
 ![](img/lidar.png)
 ![](img/lidar_out.png)
+
+
+### Other references
+* [c++ json](https://github.com/nlohmann/json)
