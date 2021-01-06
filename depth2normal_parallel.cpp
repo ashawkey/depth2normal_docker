@@ -83,7 +83,8 @@ int telldirection(float * abc,int i,int j,float d){
     float y = (i - cy) *d * 1.0 / f;
     float z = d;
 	// Vec3f camera_center=Vec3f(cx,cy,0);
-	Vec3f cor = Vec3f(0-x, 0-y, 0-z);
+	//Vec3f cor = Vec3f(0-x, 0-y, 0-z);
+	Vec3f cor = Vec3f(x-cx, y-cy, z);
 	Vec3f abcline = Vec3f(abc[0],abc[1],abc[2]);
 	float corner = cor.dot(abcline);
 	//  float corner =(cx-x)*abc[0]+(cy-y) *abc[1]+(0-z)*abc[2];
@@ -161,31 +162,23 @@ Mat calplanenormal(Mat &src) {
 			Vec3f n = normalize(d);
 			normals.at<Vec3f>(i, j) = n;
 		}
-	 Mat res = Mat::zeros(src.size(),CV_32FC3);
-     for (int i=0;i<rows;i++)
-      	for (int j=0;j<cols;j++){
-        	res.at<Vec3f>(i, j)[0] = -1.0 * normals.at<Vec3f>(i, j)[0];
-        	res.at<Vec3f>(i, j)[2] = -1.0 * normals.at<Vec3f>(i, j)[1];
-        	res.at<Vec3f>(i, j)[1] = -1.0 * normals.at<Vec3f>(i, j)[2];
-     	}
 
 	 delete[] plane12;
 	 delete[] plane_points;
-	 normals.release();
 
      for (int i=0;i<rows;i++)
       for (int j=0;j<cols;j++) {
-		if(!(res.at<Vec3f>(i, j)[0]==0&&res.at<Vec3f>(i, j)[1]==0&&res.at<Vec3f>(i, j)[2]==0)) {
-			res.at<Vec3f>(i, j)[0] += 1.0 ;
-			res.at<Vec3f>(i, j)[2] += 1.0 ;
-			res.at<Vec3f>(i, j)[1] += 1.0;
+		if(!(normals.at<Vec3f>(i, j)[0]==0&&normals.at<Vec3f>(i, j)[1]==0&&normals.at<Vec3f>(i, j)[2]==0)) {
+			normals.at<Vec3f>(i, j)[0] += 1.0 ;
+			normals.at<Vec3f>(i, j)[2] += 1.0 ;
+			normals.at<Vec3f>(i, j)[1] += 1.0;
 		 }
       }
 	 
-     res = res * 127.5;
-     res.convertTo(res, CV_8UC3);
-     cvtColor(res, res, COLOR_BGR2RGB);
-	 return res;
+     normals = normals * 127.5;
+     normals.convertTo(normals, CV_8UC3);
+     cvtColor(normals, normals, COLOR_BGR2RGB);
+	 return normals;
 }
 
 void safe_mkdir(const string& s) {
@@ -206,15 +199,19 @@ int main(int argc, char* argv[]) {
     // ./depth2normal <data.json> <outdir>
     // indir & outdir should have / at end.
     
-    if (argc != 4) {
-        cout << "Usage: depth2normal <data.json> <indir> <outdir>" << endl;
+    if (argc != 6) {
+        cout << "Usage: depth2normal <data.json> <split> <key> <indir> <outdir>" << endl;
+        cout << "key should be in: [depth, gt]" << endl;
+        cout << "Split should be in: [train, val, test]" << endl;
         return -1;
     }
 
     string json_file(argv[1]);
-    string in_dir(argv[2]);
-    string out_dir(argv[3]);
-    cout << "[INFO] run depth2normal with: " << json_file << " " << in_dir << " " << out_dir << endl;
+    string split(argv[2]);
+    string key(argv[3]);
+    string in_dir(argv[4]);
+    string out_dir(argv[5]);
+    cout << "[INFO] run depth2normal with: " << json_file << " " << split << " "  << key << " " << in_dir << " " << out_dir << endl;
 
     safe_mkdir(out_dir);
 
@@ -225,23 +222,16 @@ int main(int argc, char* argv[]) {
 	
     cout << "[INFO] loaded json" << endl;
 
-    //auto train_data = data["train"]; // vector<json>
-    //auto train_data = data["val"]; // vector<json>
-    auto train_data = data["test"]; // vector<json>
+    auto train_data = data[split];
 
     cout << "data len: " << train_data.size() << endl;
     
     // loop
-    #pragma omp parallel
-    #pragma omp for
+    #pragma omp parallel for
     for (size_t i = 0; i < train_data.size(); i++) {
         auto& ele = train_data[i];
 
-        // for input
-        string depth_path = ele["depth"];
-
-        // for GT
-        //string depth_path = ele["gt"];
+        string depth_path = ele[key];
             
         size_t pos = depth_path.rfind('/');
         string dirname = depth_path.substr(0, pos);
