@@ -8,9 +8,8 @@ Kitti Depth dataset should be prepared following [NLSPN](https://github.com/zzan
 ### Steps
 * build the opencv2.4.9 docker image with the provided dockerfile.
 * **modify docker mount location** && start docker container by `bash start.sh`.
-* (if necessary) modify the split of data in the cpp code.
 * compile depth2normal (recommend the paralleled version) by `bash compile_parallel.sh`
-* **modify input/output path, OMP_NUM_THREADS** && run it by `bash run.sh`
+* **modify input/output path, split, key, OMP_NUM_THREADS** && run it by `bash run_parallel.sh`
 
 ### Results
 ![](img/lidar.png)
